@@ -18,7 +18,7 @@ nunjucks.configure('views', {
 });
 
 // 서버를 실행할 때 MySQL과 연동된다.
-sequelize.sync({force: false})
+sequelize.sync({force: false})  // true면, 서버를 실행할 때마다 테이블을 재생성
   .then(() => {
     console.log("데이터베이스 연결 성공");
   })
@@ -26,20 +26,24 @@ sequelize.sync({force: false})
     console.error(err);
   });
 
-app.use(morgan('dev'));
-app.use(express.static(path.join(__dirname, 'public')));
+// app.use : 미들웨어 기능을 마운트하거나 지정된 경로에 마운트하는 데 사용
+app.use(morgan('dev')); // 요청, 응답에 대한 추가적인 로그를 제공
+app.use(express.static(path.join(__dirname, 'public')));  // 정적 파일 제공
+
+// body-parser. http 요청 메시지에서 body데이터를 해석하기 위한 처리
 app.use(express.json());
 app.use(express.urlencoded({ extended : false }));
 
-app.use((req, res, next) => {
+// 404 에러 내용부분만 만들어서 최종 처리를 에러 처리 미들웨어에 보냄
+app.use((req, res, next) => { 
   const error = new Error(`${req.method} ${req.url} 라우터가 없습니다.`);
   error.status = 404;
-  next(error);
+  next(error);  // 에러 미들웨어로 점프
 });
 
 app.use((err, req, res, next) => {
   res.locals.message = err.message;
-  res.locals.error = process.env.NODE_ENV !== "production" ? err : {};
+  res.locals.error = process.env.NODE_ENV !== "production" ? err : {};  // 개발 환경이면 err를 출력
   res.status(err.status || 500);
   res.render('error');
 });
